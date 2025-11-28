@@ -241,7 +241,7 @@ class ADMETModel:
         # Compute physicochemical properties
         physchem_preds = compute_physicochemical_properties(
             all_smiles=smiles, mols=mols
-        )
+        ) if self.include_physchem else pd.DataFrame([], index=smiles)
 
         # Compute fingerprints if needed
         if self.use_features:

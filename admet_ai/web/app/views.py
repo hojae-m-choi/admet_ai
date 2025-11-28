@@ -260,3 +260,33 @@ def heartbeat() -> tuple[str, int]:
 
     # Send no content response
     return "", 204
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    
+    resp = request.get_json()
+    all_smiles:list = resp['smiles']
+    
+    # Convert SMILES to RDKit molecules
+    mols = smiles_to_mols(all_smiles)
+
+    # Warn about invalid SMILES
+    for smiles, mol in zip(all_smiles, mols):
+        if mol is None or " " in smiles:
+            warnings.append(f"Invalid SMILES string: {smiles}")
+
+    # Remove invalid molecules
+    all_smiles = [smile for smile, mol in zip(all_smiles, mols) if mol is not None]
+    mols = [mol for mol in mols if mol is not None]
+
+    # Error if no valid molecules
+    if len(all_smiles) == 0:
+        return render(errors=["No valid SMILES strings given."])
+
+    # Make physicochemical and ADMET predictions (with DrugBank percentiles)
+    admet_model = get_admet_model()
+    admet_model.atc_code = session.get("atc_code")
+    all_preds = admet_model.predict(smiles=all_smiles)
+    
+    # send result to user
+    return jsonify(all_preds.T.to_dict())

@@ -56,7 +56,7 @@ def admet_predict(
     preds = model.predict(smiles=list(data.index))
 
     # Merge data and preds
-    data_with_preds = pd.concat((data, preds), axis=1)
+    data_with_preds = data.merge(preds, left_index=True, right_index=True)
 
     # Save predictions
     if save_path is None:
